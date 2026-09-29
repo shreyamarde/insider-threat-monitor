@@ -25,6 +25,8 @@ if app.config.get("AUTO_INIT_DB"):
         with app.app_context():
             from services.risk_engine import ensure_default_rules
             ensure_default_rules()
+            from seed_extra import add_extra_employees
+            add_extra_employees(log=log.info)  # idempotent: adds EMP1007–EMP1016 once
     except Exception:
         log.exception("Automatic database setup failed — check the MYSQL_* environment variables")
 

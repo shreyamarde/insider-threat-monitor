@@ -130,6 +130,11 @@ def main():
                  "Check MYSQL_HOST / MYSQL_PORT / MYSQL_USER / MYSQL_PASSWORD (and MYSQL_SSL for hosted MySQL).")
     for table, count in counts.items():
         print(f"  {table:<15} {count:>5} rows")
+    if "--no-seed" not in sys.argv:
+        from app import create_app
+        from seed_extra import add_extra_employees
+        with create_app().app_context():
+            add_extra_employees()  # + EMP1007–EMP1016 with activity history
     print("Done. Start the app with:  python app.py")
 
 

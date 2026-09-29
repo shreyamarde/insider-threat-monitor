@@ -225,6 +225,9 @@ $env:MYSQL_SSL_CA="certs\aiven-ca.pem"; $env:DEMO_MANAGER_PASSWORD="<yours>"; $e
 | Employee | `EMP1004` | `Employee@123` | Kavya Nair, Sales — restricted record + manager page probing (CRITICAL 95) |
 | Employee | `EMP1005` | `Employee@123` | Vikram Singh, Legal — two mistyped passwords (LOW 20) |
 | Employee | `EMP1000` | `Employee@123` | Rohan Das — **disabled** account (login is refused) |
+| Employees | `EMP1007`–`EMP1016` | `Employee@123` | 10 more staff across all departments (from `seed_extra.py`): mostly normal work; `EMP1008` Ishaan Gupta — new-location login + confidential access (MEDIUM 35); `EMP1012` Meera Joshi — late-night confidential access + bulk export (HIGH 65); `EMP1010`, `EMP1015` — LOW with explained points |
+
+`seed_extra.py` adds `EMP1007`–`EMP1016` to an **existing** database without deleting anything (run `python seed_extra.py`; it runs automatically in `init_db.py` and on Render start-up, and does nothing if they already exist). On the live site the employees use your `DEMO_EMPLOYEE_PASSWORD`.
 
 These are demo-only credentials seeded by `database/seed.sql` (as Werkzeug hashes). Change or remove them for any real deployment.
 
