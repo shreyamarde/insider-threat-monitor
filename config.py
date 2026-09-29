@@ -31,7 +31,8 @@ def _int(name, default):
 
 def build_mysql_uri():
     user = quote_plus(os.getenv("MYSQL_USER", "root"))
-    password = quote_plus(os.getenv("MYSQL_PASSWORD", ""))
+    # .strip(): values pasted into hosting dashboards often carry a stray newline/space
+    password = quote_plus(os.getenv("MYSQL_PASSWORD", "").strip())
     host = os.getenv("MYSQL_HOST", "localhost")
     port = os.getenv("MYSQL_PORT", "3306")
     database = os.getenv("MYSQL_DATABASE", "insider_threat_system")

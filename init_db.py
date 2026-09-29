@@ -43,7 +43,7 @@ def connect(database=None):
         host=os.getenv("MYSQL_HOST", "localhost"),
         port=int(os.getenv("MYSQL_PORT", "3306")),
         user=os.getenv("MYSQL_USER", "root"),
-        password=os.getenv("MYSQL_PASSWORD", ""),
+        password=os.getenv("MYSQL_PASSWORD", "").strip(),
         database=database,
         charset="utf8mb4",
         client_flag=CLIENT.MULTI_STATEMENTS,
@@ -67,8 +67,8 @@ def _align_clock(cursor):
 
 
 def _apply_demo_passwords(cursor, database):
-    manager_pw = os.getenv("DEMO_MANAGER_PASSWORD")
-    employee_pw = os.getenv("DEMO_EMPLOYEE_PASSWORD")
+    manager_pw = (os.getenv("DEMO_MANAGER_PASSWORD") or "").strip()
+    employee_pw = (os.getenv("DEMO_EMPLOYEE_PASSWORD") or "").strip()
     if manager_pw:
         cursor.execute(f"UPDATE `{database}`.users SET password_hash=%s WHERE role='manager'",
                        (generate_password_hash(manager_pw),))
