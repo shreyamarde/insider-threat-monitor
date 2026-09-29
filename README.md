@@ -208,7 +208,7 @@ Deployment files in this repo: `wsgi.py` (production entry point), `render.yaml`
 **Resetting the live demo data**: from your own computer, with the Aiven values set as environment variables (PowerShell):
 ```powershell
 $env:MYSQL_HOST="<aiven-host>"; $env:MYSQL_PORT="<port>"; $env:MYSQL_USER="avnadmin"; $env:MYSQL_PASSWORD="<password>"
-$env:MYSQL_SSL_CA="C:\path\to\ca.pem"; $env:DEMO_MANAGER_PASSWORD="<yours>"; $env:DEMO_EMPLOYEE_PASSWORD="<yours>"
+$env:MYSQL_SSL_CA="certs\aiven-ca.pem"; $env:DEMO_MANAGER_PASSWORD="<yours>"; $env:DEMO_EMPLOYEE_PASSWORD="<yours>"
 .venv\Scripts\python.exe init_db.py
 ```
 
