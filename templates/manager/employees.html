@@ -1,0 +1,67 @@
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+{% block title %}Employees{% endblock %}
+{% block breadcrumb %}Management / Employees{% endblock %}
+{% block heading %}Employee Management{% endblock %}
+
+{% block content %}
+<section class="card">
+    <div class="card-header">
+        <div><h3>Employees</h3><p>Create accounts, manage access and review each employee's risk</p></div>
+        <button class="btn primary" id="new-employee">{{ icon('plus') }} New employee</button>
+    </div>
+    <form class="filters" id="filters" autocomplete="off">
+        <div class="field" style="flex:1 1 220px"><label for="f-q">Search</label>
+            <input class="input" id="f-q" name="q" placeholder="Employee ID, name or email"></div>
+        <div class="field"><label for="f-department">Department</label>
+            <select class="input" id="f-department" name="department"><option value="">All departments</option>
+                {% for d in departments %}<option>{{ d }}</option>{% endfor %}</select></div>
+        <div class="field"><label for="f-status">Account status</label>
+            <select class="input" id="f-status" name="status"><option value="">Any status</option><option value="active">Active</option><option value="disabled">Disabled</option></select></div>
+        <div class="field"><label for="f-role">Role</label>
+            <select class="input" id="f-role" name="role"><option value="">All roles</option><option value="employee">Employee</option><option value="manager">Manager</option></select></div>
+        <div class="field"><label for="f-risk">Risk level</label>
+            <select class="input" id="f-risk" name="risk_level"><option value="">Any risk</option><option>LOW</option><option>MEDIUM</option><option>HIGH</option><option>CRITICAL</option></select></div>
+        <label class="checkbox"><input type="checkbox" name="online" id="f-online"> Online only</label>
+    </form>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Employee</th><th>Department</th><th>Role</th><th>Account</th><th>Presence</th><th>Risk</th><th>Last login</th><th>Actions</th></tr></thead>
+            <tbody id="emp-body"><tr><td colspan="8" class="empty">Loading…</td></tr></tbody>
+        </table>
+    </div>
+    <div class="pager" id="emp-pager"></div>
+</section>
+
+<template id="employee-form-template">
+    <form id="employee-form" novalidate autocomplete="off">
+        <div class="form-grid">
+            <div class="field"><label for="e-id">Employee ID</label>
+                <input class="input" id="e-id" name="employee_id" value="{{ suggested_id }}" maxlength="7" required style="text-transform:uppercase">
+                <span class="hint">Format: EMP1006. Must be unique.</span></div>
+            <div class="field"><label for="e-name">Full name</label>
+                <input class="input" id="e-name" name="name" maxlength="100" required placeholder="Rahul Sharma"></div>
+            <div class="field"><label for="e-email">Email</label>
+                <input class="input" id="e-email" name="email" type="email" maxlength="120" required placeholder="name@company.com"></div>
+            <div class="field"><label for="e-dept">Department</label>
+                <select class="input" id="e-dept" name="department" required>
+                    {% for d in departments %}<option>{{ d }}</option>{% endfor %}</select></div>
+            <div class="field"><label for="e-title">Job title</label>
+                <input class="input" id="e-title" name="job_title" maxlength="80" placeholder="Financial Analyst"></div>
+            <div class="field"><label for="e-role">Role</label>
+                <select class="input" id="e-role" name="role"><option value="employee">Employee</option><option value="manager">Manager</option></select></div>
+            <div class="field"><label for="e-password">Temporary password</label>
+                <div class="input-group"><input class="input" id="e-password" name="password" type="text" maxlength="128" required autocomplete="new-password">
+                <button type="button" class="btn" id="gen-password">Generate</button></div>
+                <span class="hint">8+ characters with letters and numbers. The employee must change it at first login.</span></div>
+            <div class="field"><label for="e-status">Account status</label>
+                <select class="input" id="e-status" name="status"><option value="active">Active</option><option value="disabled">Disabled</option></select></div>
+        </div>
+        <p class="error-text" id="form-error" style="margin-top:12px" hidden></p>
+    </form>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/manager-employees.js') }}"></script>
+{% endblock %}

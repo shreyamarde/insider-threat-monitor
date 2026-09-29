@@ -1,0 +1,141 @@
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+{% block title %}{{ user.employee_id }}{% endblock %}
+{% block breadcrumb %}<a href="{{ url_for('manager.employees') }}">Employees</a> / {{ user.employee_id }}{% endblock %}
+{% block heading %}{{ user.name }}{% endblock %}
+
+{% block content %}
+{% set rs = user.risk %}
+{% set level = rs.risk_level if rs else 'LOW' %}
+{% set score = rs.current_score if rs else 0 %}
+
+<section class="card hero" id="employee-detail" data-user-id="{{ user.id }}" data-employee-id="{{ user.employee_id }}">
+    <div class="avatar lg">{{ user.initials }}</div>
+    <div style="flex:1;min-width:0">
+        <h2>{{ user.name }} <span class="muted" style="font-weight:500">· {{ user.employee_id }}</span></h2>
+        <div class="meta">
+            <span>{{ user.department }}{% if user.job_title %} · {{ user.job_title }}{% endif %}</span>
+            <span>{{ user.email }}</span>
+            <span class="badge plain role-{{ user.role }}">{{ user.role|capitalize }}</span>
+            <span class="badge plain acct-{{ user.status }}">{{ 'Active' if user.status == 'active' else 'Disabled' }}</span>
+            <span class="presence {{ 'online' if user.online else 'offline' }}">{{ 'Online' if user.online else 'Offline · last seen ' ~ (user.last_seen|ago) }}</span>
+        </div>
+        <div class="meta small">
+            <span>Last login: {{ user.last_login|dt }} {% if user.last_login_ip %}from <code>{{ user.last_login_ip }}</code>{% endif %}</span>
+            <span>Created: {{ user.created_at|dt('%d %b %Y') }}</span>
+            {% if user.must_change_password %}<span class="badge plain st-ACKNOWLEDGED">Temporary password</span>{% endif %}
+        </div>
+    </div>
+    {% if user.role == 'employee' %}
+    <div style="text-align:right">
+        <div class="muted small">Current risk</div>
+        <div style="font-size:34px;font-weight:800;line-height:1.1">{{ score }}<span class="muted" style="font-size:15px">/100</span></div>
+        <span class="badge lvl-{{ level }}">{{ level }}</span>
+    </div>
+    {% endif %}
+</section>
+
+<section class="grid grid-main">
+    <div class="card">
+        <div class="card-header"><div><h3>Why is the risk score {{ score }}?</h3><p>Every point added by the rule engine, newest first. Scores decay by {{ config.RISK_DECAY_PER_HOUR }} points per hour of normal behaviour.</p></div></div>
+        <div class="card-body">
+            {% if risk_events %}
+            <ul class="reason-list">
+                {% for e in risk_events %}
+                <li><span class="pts">+{{ e.points }}</span>
+                    <span>Risk increased by {{ e.points }} because: {{ e.reason }}
+                    <br><span class="muted small">{{ e.created_at|dt }} · score {{ e.score_before }} → {{ e.score_after }} · rule {{ e.rule_key }}
+                    {% if e.activity_id %} · <a href="#" data-view-activity="{{ e.activity_id }}">view activity</a>{% endif %}</span></span></li>
+                {% endfor %}
+            </ul>
+            {% else %}<div class="empty">No risk events recorded for this employee.</div>{% endif %}
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><div><h3>Account</h3><p>Edit details and access</p></div></div>
+        <div class="card-body">
+            <form id="edit-form" class="form-grid" novalidate>
+                <div class="field full"><label for="d-name">Full name</label><input class="input" id="d-name" name="name" value="{{ user.name }}" maxlength="100"></div>
+                <div class="field full"><label for="d-email">Email</label><input class="input" id="d-email" name="email" value="{{ user.email }}" maxlength="120"></div>
+                <div class="field"><label for="d-dept">Department</label><select class="input" id="d-dept" name="department">
+                    {% for d in departments %}<option {{ 'selected' if d == user.department }}>{{ d }}</option>{% endfor %}</select></div>
+                <div class="field"><label for="d-title">Job title</label><input class="input" id="d-title" name="job_title" value="{{ user.job_title or '' }}" maxlength="80"></div>
+                <div class="field"><label for="d-role">Role</label><select class="input" id="d-role" name="role" {{ 'disabled' if user.id == current_user.id }}>
+                    <option value="employee" {{ 'selected' if user.role == 'employee' }}>Employee</option>
+                    <option value="manager" {{ 'selected' if user.role == 'manager' }}>Manager</option></select></div>
+                <div class="field"><label for="d-status">Account status</label><select class="input" id="d-status" name="status" {{ 'disabled' if user.id == current_user.id }}>
+                    <option value="active" {{ 'selected' if user.status == 'active' }}>Active</option>
+                    <option value="disabled" {{ 'selected' if user.status == 'disabled' }}>Disabled</option></select></div>
+                <div class="full btn-row" style="margin-top:4px">
+                    <button class="btn primary" type="submit">{{ icon('check') }} Save changes</button>
+                    <button class="btn" type="button" id="reset-btn">{{ icon('key') }} Reset password</button>
+                </div>
+            </form>
+            {% if action_counts %}
+            <div class="section-title">Actions, last 7 days</div>
+            <ul class="list" style="margin:0 -18px">
+                {% for action, count in action_counts %}<li><span class="action-tag">{{ action }}</span><strong>{{ count }}</strong></li>{% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<section class="card">
+    <div class="card-header"><div><h3>Recent Activity</h3><p>Last 25 actions — click a row for full details</p></div>
+        <a class="btn sm" href="{{ url_for('manager.activity') }}?employee={{ user.employee_id }}">Full history →</a></div>
+    <div class="table-wrap"><table>
+        <thead><tr><th>Time</th><th>Action</th><th>Resource</th><th>Description</th><th>IP</th><th>Status</th><th class="num">Risk</th></tr></thead>
+        <tbody>
+        {% for a in activities %}
+            <tr class="clickable" data-view-activity="{{ a.id }}">
+                <td class="nowrap">{{ a.timestamp|dt('%d %b %H:%M:%S') }}</td>
+                <td><span class="action-tag {{ 'risky' if a.risk_score > 0 }}">{{ a.action }}</span></td>
+                <td><code>{{ a.resource or '—' }}</code></td>
+                <td class="truncate">{{ a.description or '' }}</td>
+                <td><code>{{ a.ip_address or '—' }}</code></td>
+                <td><span class="badge plain st-{{ a.status }}">{{ a.status }}</span></td>
+                <td class="num">{% if a.risk_score > 0 %}<span class="badge plain sev-{{ 'CRITICAL' if a.risk_score >= 80 else 'HIGH' if a.risk_score >= 60 else 'MEDIUM' if a.risk_score >= 30 else 'LOW' }}">+{{ a.risk_score }}</span>{% else %}<span class="muted">0</span>{% endif %}</td>
+            </tr>
+        {% else %}<tr><td colspan="7" class="empty">No activity recorded.</td></tr>{% endfor %}
+        </tbody>
+    </table></div>
+</section>
+
+<section class="grid grid-2">
+    <div class="card">
+        <div class="card-header"><div><h3>Alerts</h3><p>Alerts raised for this employee</p></div></div>
+        <div class="table-wrap"><table>
+            <thead><tr><th>Time</th><th>Alert</th><th>Severity</th><th>Status</th></tr></thead>
+            <tbody>
+            {% for al in alerts %}
+                <tr class="clickable" data-view-alert="{{ al.id }}">
+                    <td class="nowrap">{{ al.timestamp|dt('%d %b %H:%M') }}</td>
+                    <td><strong>{{ al.title }}</strong><span class="sub">{{ al.message }}</span></td>
+                    <td><span class="badge sev-{{ al.severity }}">{{ al.severity }}</span></td>
+                    <td><span class="badge plain st-{{ al.status }}">{{ al.status }}</span></td>
+                </tr>
+            {% else %}<tr><td colspan="4" class="empty">No alerts.</td></tr>{% endfor %}
+            </tbody>
+        </table></div>
+    </div>
+    <div class="card">
+        <div class="card-header"><div><h3>Login Attempts</h3><p>Last 10 sign-in attempts with this employee ID</p></div></div>
+        <div class="table-wrap"><table>
+            <thead><tr><th>Time</th><th>Result</th><th>Reason</th><th>IP address</th></tr></thead>
+            <tbody>
+            {% for la in attempts %}
+                <tr><td class="nowrap">{{ la.timestamp|dt('%d %b %H:%M:%S') }}</td>
+                    <td><span class="badge plain st-{{ 'SUCCESS' if la.success else 'FAILED' }}">{{ 'Success' if la.success else 'Failed' }}</span></td>
+                    <td class="small">{{ (la.reason or '')|replace('_', ' ')|lower }}</td>
+                    <td><code>{{ la.ip_address or '—' }}</code></td></tr>
+            {% else %}<tr><td colspan="4" class="empty">No login attempts.</td></tr>{% endfor %}
+            </tbody>
+        </table></div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/manager-employee-detail.js') }}"></script>
+{% endblock %}

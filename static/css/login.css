@@ -1,0 +1,137 @@
+/* Login page — the original SHRUTU split-screen design, moved out of the template. */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    min-height: 100vh;
+    font-family: "Inter", "Segoe UI", Arial, sans-serif;
+    background:
+        radial-gradient(circle at 15% 20%, rgba(37, 99, 235, 0.20), transparent 30%),
+        radial-gradient(circle at 85% 80%, rgba(14, 165, 233, 0.12), transparent 30%),
+        #050b14;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 0;
+}
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    background-size: 45px 45px;
+    pointer-events: none;
+}
+.glow { position: fixed; border-radius: 50%; filter: blur(80px); pointer-events: none; }
+.glow-one { width: 250px; height: 250px; background: #2563eb; opacity: .13; top: -80px; left: -70px; }
+.glow-two { width: 300px; height: 300px; background: #0ea5e9; opacity: .08; bottom: -120px; right: -100px; }
+
+.login-container {
+    position: relative;
+    width: 960px;
+    min-height: 580px;
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    background: rgba(10, 20, 34, 0.82);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55), 0 0 80px rgba(37, 99, 235, 0.08);
+    backdrop-filter: blur(20px);
+}
+
+/* left brand side */
+.brand-section {
+    padding: 55px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(145deg, rgba(15, 35, 60, 0.90), rgba(5, 15, 27, 0.95));
+}
+.brand { display: flex; align-items: center; gap: 15px; margin-bottom: 46px; }
+.brand-icon {
+    width: 58px; height: 58px; border-radius: 16px;
+    background: linear-gradient(135deg, #2563eb, #0ea5e9);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 10px 30px rgba(37, 99, 235, 0.35);
+}
+.brand-icon svg { width: 30px; height: 30px; }
+.brand-name { font-size: 27px; font-weight: 700; letter-spacing: 3px; }
+.brand-subtitle { color: #64748b; font-size: 11px; letter-spacing: 2px; margin-top: 3px; }
+.welcome-title { font-size: 38px; line-height: 1.15; margin-bottom: 18px; }
+.welcome-title span { color: #3b82f6; }
+.description { color: #94a3b8; line-height: 1.7; font-size: 14px; max-width: 420px; }
+.features { margin-top: 32px; display: flex; flex-direction: column; gap: 13px; }
+.feature { display: flex; align-items: center; gap: 12px; color: #cbd5e1; font-size: 13px; }
+.feature-icon {
+    width: 27px; height: 27px; border-radius: 7px; background: rgba(37, 99, 235, 0.13);
+    display: flex; align-items: center; justify-content: center; color: #60a5fa; font-size: 13px;
+}
+.security-orbit {
+    position: absolute; right: -80px; bottom: -80px; width: 260px; height: 260px;
+    border: 1px solid rgba(59, 130, 246, 0.12); border-radius: 50%;
+}
+.security-orbit::before, .security-orbit::after { content: ""; position: absolute; border-radius: 50%; }
+.security-orbit::before { inset: 30px; border: 1px solid rgba(59, 130, 246, 0.09); }
+.security-orbit::after { inset: 70px; border: 1px solid rgba(59, 130, 246, 0.08); }
+
+/* right login side */
+.login-section {
+    padding: 55px 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: rgba(5, 13, 24, 0.60);
+}
+.login-heading { margin-bottom: 28px; }
+.login-heading h2 { font-size: 25px; margin-bottom: 7px; }
+.login-heading p { color: #7c8da5; font-size: 13px; }
+.form-group { margin-bottom: 19px; }
+label { display: block; color: #cbd5e1; font-size: 12px; font-weight: 600; margin-bottom: 8px; letter-spacing: .5px; }
+.input-wrapper { position: relative; }
+.input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #64748b; display: flex; }
+.input-icon svg { width: 17px; height: 17px; }
+input {
+    width: 100%; height: 48px; border-radius: 9px; border: 1px solid #1e293b; background: #0b1625;
+    color: #fff; padding: 0 44px; outline: none; font-size: 14px; transition: .2s; font-family: inherit;
+}
+input.uppercase { text-transform: uppercase; }
+input::placeholder { color: #475569; text-transform: none; }
+input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
+.password-toggle {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: #64748b; cursor: pointer; padding: 6px; display: flex; border-radius: 6px;
+}
+.password-toggle:hover { color: #cbd5e1; }
+.password-toggle svg { width: 18px; height: 18px; }
+.login-options { display: flex; justify-content: flex-end; margin: 2px 0 22px; font-size: 12px; color: #64748b; }
+.login-button {
+    width: 100%; height: 48px; border: none; border-radius: 9px;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; font-weight: 600; font-size: 14px;
+    cursor: pointer; box-shadow: 0 10px 25px rgba(37, 99, 235, 0.22); transition: .2s; font-family: inherit;
+}
+.login-button:hover { transform: translateY(-1px); box-shadow: 0 14px 30px rgba(37, 99, 235, 0.32); }
+.security-message {
+    margin-top: 24px; padding: 11px 13px; border-radius: 8px;
+    background: rgba(34, 197, 94, 0.06); border: 1px solid rgba(34, 197, 94, 0.12);
+    display: flex; gap: 9px; align-items: center; color: #7c8da5; font-size: 12px;
+}
+.security-message strong { color: #22c55e; }
+.footer { text-align: center; margin-top: 26px; color: #475569; font-size: 11.5px; line-height: 1.6; }
+.footer span { color: #64748b; }
+.error-message, .flash {
+    padding: 11px 13px; border-radius: 8px; font-size: 13px; margin-bottom: 18px; border: 1px solid;
+}
+.error-message, .flash.error { background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.25); color: #fca5a5; }
+.flash.success { background: rgba(34, 197, 94, 0.08); border-color: rgba(34, 197, 94, 0.25); color: #86efac; }
+.flash.warning, .flash.info { background: rgba(250, 178, 25, 0.08); border-color: rgba(250, 178, 25, 0.25); color: #fcd34d; }
+
+@media (max-width: 900px) {
+    .login-container { width: 94%; grid-template-columns: 1fr; min-height: 0; }
+    .brand-section { display: none; }
+    .login-section { padding: 40px 28px; }
+}

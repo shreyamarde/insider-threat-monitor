@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+{% set active = 'records' %}
+{% block title %}{{ 'Edit ' ~ record.record_code if record else 'New record' }}{% endblock %}
+{% block breadcrumb %}<a href="{{ url_for('employee.records') }}">Records</a> / {{ record.record_code if record else 'New' }}{% endblock %}
+{% block heading %}{{ 'Edit record' if record else 'Add a record' }}{% endblock %}
+
+{% block content %}
+<section class="card" style="max-width:820px">
+    <div class="card-header"><div>
+        <h3>{{ record.record_code ~ ' · ' ~ record.title if record else 'New ' ~ current_user.department ~ ' record' }}</h3>
+        <p>Records are stored in the {{ current_user.department }} department. RESTRICTED records can only be created by administrators.</p>
+    </div></div>
+    <div class="card-body">
+        <form method="POST" class="form-grid" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="field full"><label for="title">Title</label>
+                <input class="input" id="title" name="title" value="{{ form.title or '' }}" maxlength="150" required></div>
+            <div class="field"><label for="category">Category</label>
+                <select class="input" id="category" name="category">
+                    {% for c in categories %}<option {{ 'selected' if c == form.category }}>{{ c }}</option>{% endfor %}</select></div>
+            <div class="field"><label for="sensitivity">Classification</label>
+                <select class="input" id="sensitivity" name="sensitivity">
+                    {% for s in sensitivities %}<option {{ 'selected' if s == (form.sensitivity or 'INTERNAL') }}>{{ s }}</option>{% endfor %}</select></div>
+            <div class="field full"><label for="content">Content</label>
+                <textarea class="input" id="content" name="content" maxlength="5000" required>{{ form.content or '' }}</textarea></div>
+            <div class="full btn-row">
+                <button class="btn primary" type="submit">{{ 'Save changes' if record else 'Create record' }}</button>
+                <a class="btn" href="{{ url_for('employee.view_record', record_id=record.id) if record else url_for('employee.records') }}">Cancel</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

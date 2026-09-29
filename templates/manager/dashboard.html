@@ -1,0 +1,114 @@
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+{% block title %}Dashboard{% endblock %}
+{% block breadcrumb %}Security / Overview{% endblock %}
+{% block heading %}Security Dashboard{% endblock %}
+
+{% block content %}
+<section class="kpis" id="kpis">
+    <div class="card kpi"><div class="kpi-label">Total Employees <span class="kpi-icon">{{ icon('users') }}</span></div>
+        <div class="kpi-value" data-kpi="total_employees">–</div><div class="kpi-sub"><span data-kpi="active_accounts">–</span> active accounts</div></div>
+    <div class="card kpi tone-good"><div class="kpi-label">Online Now <span class="kpi-icon">{{ icon('online') }}</span></div>
+        <div class="kpi-value" data-kpi="online_now">–</div><div class="kpi-sub">live presence</div></div>
+    <div class="card kpi"><div class="kpi-label">Activities Today <span class="kpi-icon">{{ icon('activity') }}</span></div>
+        <div class="kpi-value" data-kpi="activities_today">–</div><div class="kpi-sub"><span data-kpi="suspicious_today">–</span> risk-scored</div></div>
+    <div class="card kpi tone-high"><div class="kpi-label">New Alerts <span class="kpi-icon">{{ icon('bell') }}</span></div>
+        <div class="kpi-value" data-kpi="new_alerts">–</div><div class="kpi-sub">awaiting review</div></div>
+    <div class="card kpi tone-critical"><div class="kpi-label">High / Critical <span class="kpi-icon">{{ icon('alert') }}</span></div>
+        <div class="kpi-value" data-kpi="high_critical_open">–</div><div class="kpi-sub">open alerts</div></div>
+    <div class="card kpi tone-critical"><div class="kpi-label">Employees at Risk <span class="kpi-icon">{{ icon('risk') }}</span></div>
+        <div class="kpi-value" data-kpi="employees_at_risk">–</div><div class="kpi-sub">HIGH or CRITICAL level</div></div>
+</section>
+
+<section class="grid grid-side">
+    <div class="card">
+        <div class="card-header">
+            <div><h3>Live Activity Feed</h3><p>Every employee and manager action, as it happens</p></div>
+            <a class="btn sm" href="{{ url_for('manager.activity') }}">Open log →</a>
+        </div>
+        <ul class="feed" id="feed"><li class="empty">Loading…</li></ul>
+    </div>
+    <div class="card">
+        <div class="card-header"><div><h3>Activity, last 24 hours</h3><p>All actions vs. actions that added risk points, per hour</p></div></div>
+        <div class="card-body">
+            <div class="legend"><span><i style="background:var(--series-1)"></i>All activity</span><span><i style="background:var(--series-2)"></i>Risk-scored activity</span></div>
+            <div class="chart-box tall"><canvas id="chart-timeline" aria-label="Line chart of activity per hour over the last 24 hours" role="img"></canvas></div>
+            <details class="data-table" id="table-timeline"><summary>View data table</summary></details>
+        </div>
+    </div>
+</section>
+
+<section class="card">
+    <div class="card-header">
+        <div><h3>Security Alerts</h3><p>Most recent alerts raised by the risk engine — new ones appear here instantly</p></div>
+        <a class="btn sm" href="{{ url_for('manager.alerts') }}">All alerts →</a>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Employee</th><th>Alert</th><th>Severity</th><th class="num">Risk</th><th>Time</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="alerts-body"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
+        </table>
+    </div>
+</section>
+
+<section class="grid grid-2">
+    <div class="card">
+        <div class="card-header">
+            <div><h3>Risk Overview</h3><p>Employees grouped by current risk level</p></div>
+            <a class="btn sm" href="{{ url_for('manager.risk') }}">Details →</a>
+        </div>
+        <div class="card-body">
+            <div class="mini-risk" id="risk-counts"></div>
+            <div class="section-title">Highest risk employees</div>
+            <div id="risk-top"></div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><div><h3>Employee Status</h3><p>Online presence (heartbeat) and last seen</p></div></div>
+        <ul class="list" id="presence-list"><li class="empty">Loading…</li></ul>
+    </div>
+</section>
+
+<section class="grid grid-2">
+    <div class="card">
+        <div class="card-header"><div><h3>Recent Sign-ins</h3><p>Successful logins</p></div></div>
+        <ul class="list" id="logins-list"></ul>
+    </div>
+    <div class="card">
+        <div class="card-header"><div><h3>Failed Login Attempts</h3><p>Wrong passwords, unknown IDs, lockouts</p></div>
+            <a class="btn sm" href="{{ url_for('manager.audit') }}#logins">All →</a></div>
+        <ul class="list" id="failed-list"></ul>
+    </div>
+</section>
+
+<section class="grid grid-3">
+    <div class="card">
+        <div class="card-header"><div><h3>Alerts by Severity</h3><p>Last 7 days</p></div></div>
+        <div class="card-body">
+            <div class="legend" id="legend-severity"></div>
+            <div class="chart-box"><canvas id="chart-severity" role="img" aria-label="Stacked bar chart of alerts per day by severity"></canvas></div>
+            <details class="data-table" id="table-severity"><summary>View data table</summary></details>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><div><h3>Activity Types Today</h3><p>Count of each action since midnight</p></div></div>
+        <div class="card-body">
+            <div class="chart-box"><canvas id="chart-actions" role="img" aria-label="Bar chart of activity types today"></canvas></div>
+            <details class="data-table" id="table-actions"><summary>View data table</summary></details>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><div><h3>Most Active Employees Today</h3><p>Number of actions since midnight</p></div></div>
+        <div class="card-body">
+            <div class="chart-box"><canvas id="chart-employees" role="img" aria-label="Bar chart of actions per employee today"></canvas></div>
+            <details class="data-table" id="table-employees"><summary>View data table</summary></details>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/manager-dashboard.js') }}"></script>
+{% endblock %}

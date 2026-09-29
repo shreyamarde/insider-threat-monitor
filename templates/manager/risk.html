@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% block title %}Risk Monitoring{% endblock %}
+{% block breadcrumb %}Monitoring / Risk{% endblock %}
+{% block heading %}Risk Monitoring{% endblock %}
+
+{% block content %}
+<section class="card">
+    <div class="card-header">
+        <div><h3>Employees by Risk Level</h3>
+            <p>LOW 0–29 · MEDIUM 30–59 · HIGH 60–79 · CRITICAL 80–100. Scores are capped at 100 and decay slowly with normal behaviour.</p></div>
+    </div>
+    <div class="card-body"><div class="risk-columns" id="risk-columns"><div class="empty">Loading…</div></div></div>
+</section>
+
+<section class="card">
+    <div class="card-header"><div><h3>Risk Score Changes</h3><p>Why scores went up — every point is explained by a rule</p></div></div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Time</th><th>Employee</th><th>Rule</th><th>Reason</th><th class="num">Points</th><th class="num">Score</th><th></th></tr></thead>
+            <tbody id="events-body"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/manager-risk.js') }}"></script>
+{% endblock %}

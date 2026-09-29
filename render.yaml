@@ -1,0 +1,45 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# New > Blueprint > pick this repository. Values marked "sync: false" are asked for once
+# in the Render dashboard (never commit them).
+services:
+  - type: web
+    name: shrutu-insider-threat
+    runtime: python
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    # ONE worker: Socket.IO rooms live in memory. Threads handle concurrent users + WebSockets.
+    startCommand: gunicorn --worker-class gthread -w 1 --threads 100 --timeout 120 wsgi:app
+    healthCheckPath: /
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      # --- Aiven MySQL (copy from the Aiven service "Overview" page)
+      - key: MYSQL_HOST
+        sync: false
+      - key: MYSQL_PORT
+        sync: false
+      - key: MYSQL_USER
+        sync: false
+      - key: MYSQL_PASSWORD
+        sync: false
+      - key: MYSQL_DATABASE
+        value: insider_threat_system
+      # Aiven's CA certificate, uploaded as a Render "Secret File" named ca.pem
+      - key: MYSQL_SSL_CA
+        value: /etc/secrets/ca.pem
+      # --- create tables + demo data automatically on the first start
+      - key: AUTO_INIT_DB
+        value: "1"
+      # Your own passwords for the public demo accounts (instead of the README ones)
+      - key: DEMO_MANAGER_PASSWORD
+        sync: false
+      - key: DEMO_EMPLOYEE_PASSWORD
+        sync: false
+      # --- running behind Render's HTTPS proxy
+      - key: TRUST_PROXY
+        value: "1"
+      - key: SESSION_COOKIE_SECURE
+        value: "1"
+      - key: TZ
+        value: Asia/Kolkata

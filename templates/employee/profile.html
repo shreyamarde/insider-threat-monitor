@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+{% set active = 'profile' %}
+{% block title %}Profile{% endblock %}
+{% block breadcrumb %}Workspace / Profile{% endblock %}
+{% block heading %}My Profile{% endblock %}
+
+{% block content %}
+<section class="grid grid-2">
+    <div class="card">
+        <div class="card-header"><div><h3>Profile information</h3><p>Managed by your manager — ask them to correct anything that is wrong.</p></div></div>
+        <div class="card-body">
+            <dl class="detail-grid">
+                <dt>Name</dt><dd>{{ user.name }}</dd>
+                <dt>Employee ID</dt><dd><code>{{ user.employee_id }}</code></dd>
+                <dt>Email</dt><dd>{{ user.email }}</dd>
+                <dt>Department</dt><dd>{{ user.department }}</dd>
+                <dt>Job title</dt><dd>{{ user.job_title or '—' }}</dd>
+                <dt>Account status</dt><dd><span class="badge plain acct-{{ user.status }}">{{ 'Active' if user.status == 'active' else 'Disabled' }}</span></dd>
+                <dt>Member since</dt><dd>{{ user.created_at|dt('%d %b %Y') }}</dd>
+            </dl>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><div><h3>Sign-in &amp; security</h3><p>Your current session</p></div></div>
+        <div class="card-body">
+            <dl class="detail-grid" style="margin-bottom:16px">
+                <dt>Login status</dt><dd><span class="presence online">Signed in</span></dd>
+                <dt>Last login</dt><dd>{{ user.last_login|dt }}</dd>
+                <dt>From IP</dt><dd><code>{{ user.last_login_ip or '—' }}</code></dd>
+                <dt>Session timeout</dt><dd>{{ (config.PERMANENT_SESSION_LIFETIME.total_seconds() // 60)|int }} minutes of inactivity</dd>
+            </dl>
+            <a class="btn primary" href="{{ url_for('auth.change_password') }}">{{ icon('key') }} Change password</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

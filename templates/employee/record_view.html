@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+{% set active = 'records' %}
+{% block title %}{{ record.record_code }}{% endblock %}
+{% block breadcrumb %}<a href="{{ url_for('employee.records') }}">Records</a> / {{ record.record_code }}{% endblock %}
+{% block heading %}{{ record.title }}{% endblock %}
+
+{% block content %}
+<section class="card">
+    <div class="card-header">
+        <div>
+            <h3><code>{{ record.record_code }}</code> · {{ record.title }}</h3>
+            <p>{{ record.category }} · {{ record.department }} · updated {{ record.updated_at|dt }}</p>
+        </div>
+        <div class="btn-row">
+            <span class="badge plain sens-{{ record.sensitivity }}">{{ record.sensitivity }}</span>
+            {% if can_edit %}<a class="btn" href="{{ url_for('employee.edit_record', record_id=record.id) }}">{{ icon('edit') }} Edit</a>{% endif %}
+            <a class="btn" href="{{ url_for('employee.records') }}">← Back</a>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if record.sensitivity == 'CONFIDENTIAL' %}
+        <div class="flash warning" style="margin-bottom:14px">Confidential record: access is restricted to authorised {{ record.department }} staff and is logged.</div>
+        {% endif %}
+        <div class="record-content">{{ record.content }}</div>
+        <p class="muted small" style="margin-top:12px">Created {{ record.created_at|dt }}{% if record.creator %} by {{ record.creator.employee_id }}{% endif %}{% if record.updater %} · last edited by {{ record.updater.employee_id }}{% endif %}</p>
+    </div>
+</section>
+{% endblock %}

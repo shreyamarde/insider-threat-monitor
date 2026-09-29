@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block body %}
+<div class="error-page">
+    <div class="card error-card">
+        <div class="code">{{ code }}</div>
+        <h1>{{ title }}</h1>
+        <p>{{ message }}</p>
+        <div class="btn-row" style="justify-content:center">
+            <a class="btn primary" href="{{ home_url or url_for('auth.login_page') }}">Continue</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+{% set active = 'records' %}
+{% block title %}Records{% endblock %}
+{% block breadcrumb %}Workspace / Records{% endblock %}
+{% block heading %}Records{% endblock %}
+
+{% block content %}
+<section class="card">
+    <div class="card-header">
+        <div><h3>Search records</h3><p>You can see {{ current_user.department }} records and company-wide records.</p></div>
+        <a class="btn primary" href="{{ url_for('employee.add_record') }}">{{ icon('plus') }} Add record</a>
+    </div>
+    <form class="filters" method="GET" action="{{ url_for('employee.records') }}">
+        <div class="field" style="flex:1 1 260px"><label for="q">Keywords</label>
+            <input class="input" id="q" name="q" value="{{ query }}" placeholder="Title, code or content" maxlength="100"></div>
+        <div class="field"><label for="category">Category</label>
+            <select class="input" id="category" name="category"><option value="">All categories</option>
+                {% for c in categories %}<option {{ 'selected' if c == category }}>{{ c }}</option>{% endfor %}</select></div>
+        <button class="btn primary" type="submit">{{ icon('search') }} Search</button>
+        {% if searched %}
+            <a class="btn" href="{{ url_for('employee.export_records', q=query, category=category) }}">{{ icon('download') }} Export CSV</a>
+            <a class="btn" href="{{ url_for('employee.records') }}">Clear</a>
+        {% endif %}
+    </form>
+    <div class="table-wrap"><table>
+        <thead><tr><th>Code</th><th>Title</th><th>Category</th><th>Department</th><th>Classification</th><th>Updated</th></tr></thead>
+        <tbody>
+        {% for r in results %}
+            <tr><td><a href="{{ url_for('employee.view_record', record_id=r.id) }}"><code>{{ r.record_code }}</code></a></td>
+                <td><a href="{{ url_for('employee.view_record', record_id=r.id) }}" style="color:inherit"><strong>{{ r.title }}</strong></a></td>
+                <td>{{ r.category }}</td><td>{{ r.department }}</td>
+                <td><span class="badge plain sens-{{ r.sensitivity }}">{{ r.sensitivity }}</span></td>
+                <td class="nowrap muted">{{ r.updated_at|dt('%d %b %Y') }}</td></tr>
+        {% else %}<tr><td colspan="6" class="empty">{{ 'No records match your search.' if searched else 'No records available.' }}</td></tr>{% endfor %}
+        </tbody>
+    </table></div>
+    <div class="pager"><span>{{ results|length }} record(s){% if not searched %} · most recently updated{% endif %}</span></div>
+</section>
+{% endblock %}

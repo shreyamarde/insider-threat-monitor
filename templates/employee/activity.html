@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% set active = 'activity' %}
+{% block title %}My Activity{% endblock %}
+{% block breadcrumb %}Workspace / My Activity{% endblock %}
+{% block heading %}My Activity{% endblock %}
+
+{% block content %}
+<section class="card">
+    <div class="card-header"><div><h3>Your activity history</h3>
+        <p>Every sign-in and action on your account is recorded automatically. If you see something you don't recognise, contact your manager.</p></div></div>
+    <div class="table-wrap"><table>
+        <thead><tr><th>Time</th><th>Action</th><th>Resource</th><th>Details</th><th>IP address</th><th>Result</th></tr></thead>
+        <tbody>
+        {% for a in pagination.items %}
+            <tr><td class="nowrap">{{ a.timestamp|dt('%d %b %Y, %H:%M:%S') }}</td>
+                <td><span class="action-tag">{{ a.action }}</span></td>
+                <td><code>{{ a.resource or '—' }}</code></td>
+                <td>{{ a.description or '' }}</td>
+                <td><code>{{ a.ip_address or '—' }}</code></td>
+                <td><span class="badge plain st-{{ a.status }}">{{ a.status }}</span></td></tr>
+        {% else %}<tr><td colspan="6" class="empty">No activity yet.</td></tr>{% endfor %}
+        </tbody>
+    </table></div>
+    <div class="pager">
+        <span>{{ pagination.total }} action(s) · page {{ pagination.page }} of {{ pagination.pages or 1 }}</span>
+        <span class="btn-row">
+            {% if pagination.has_prev %}<a class="btn sm" href="{{ url_for('employee.my_activity', page=pagination.prev_num) }}">← Prev</a>{% endif %}
+            {% if pagination.has_next %}<a class="btn sm" href="{{ url_for('employee.my_activity', page=pagination.next_num) }}">Next →</a>{% endif %}
+        </span>
+    </div>
+</section>
+{% endblock %}

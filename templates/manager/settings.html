@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+{% block title %}Settings{% endblock %}
+{% block breadcrumb %}Management / Settings{% endblock %}
+{% block heading %}Settings{% endblock %}
+
+{% block content %}
+<section class="card">
+    <div class="card-header">
+        <div><h3>Detection Rules</h3>
+            <p>The risk engine is fully rule-based and explainable. Tune points, thresholds, time windows and the alert severity each rule raises. Changes apply immediately and are audited.</p></div>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Rule</th><th class="num">Points</th><th class="num">Threshold</th><th class="num">Window (min)</th><th>Alert severity</th><th>Enabled</th><th></th></tr></thead>
+            <tbody id="rules-body"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
+        </table>
+    </div>
+</section>
+
+<section class="grid grid-2">
+    <div class="card">
+        <div class="card-header"><div><h3>Risk &amp; Security Policy</h3><p>Set in <code>config.py</code> / environment variables</p></div></div>
+        <div class="card-body">
+            <dl class="detail-grid">
+                <dt>Risk levels</dt><dd>{% for level, bound in policy.levels %}<span class="badge lvl-{{ level }}">{{ level }} ≥ {{ bound }}</span> {% endfor %}</dd>
+                <dt>Score cap</dt><dd>{{ policy.cap }} (scores never exceed this)</dd>
+                <dt>Score decay</dt><dd>−{{ policy.decay }} points / hour, starting {{ policy.decay_grace }} min after the last increase</dd>
+                <dt>Working hours</dt><dd>{{ policy.work_hours }}</dd>
+                <dt>Alert cooldown</dt><dd>Same alert type for the same employee is not repeated within {{ policy.alert_cooldown }} min</dd>
+                <dt>Login lockout</dt><dd>{{ policy.lockout }}</dd>
+                <dt>Session timeout</dt><dd>{{ policy.session }} min of inactivity</dd>
+                <dt>Presence timeout</dt><dd>Offline after {{ policy.presence }} s without a heartbeat</dd>
+            </dl>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><div><h3>Your Account</h3><p>Personal preferences and credentials</p></div></div>
+        <div class="card-body">
+            <dl class="detail-grid" style="margin-bottom:16px">
+                <dt>Signed in as</dt><dd>{{ current_user.name }} ({{ current_user.employee_id }})</dd>
+                <dt>Last login</dt><dd>{{ current_user.last_login|dt }}</dd>
+            </dl>
+            <div class="btn-row">
+                <a class="btn" href="{{ url_for('auth.change_password') }}">{{ icon('key') }} Change password</a>
+                <button class="btn" type="button" id="theme-toggle-2">{{ icon('moon') }} Toggle light / dark theme</button>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/manager-settings.js') }}"></script>
+{% endblock %}

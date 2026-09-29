@@ -1,0 +1,38 @@
+{% extends "layout.html" %}
+{% block title %}Alerts{% endblock %}
+{% block breadcrumb %}Monitoring / Alerts{% endblock %}
+{% block heading %}Security Alerts{% endblock %}
+
+{% block content %}
+<section class="card">
+    <div class="card-header">
+        <div><h3>Alert Queue</h3><p>Alerts are never deleted. Acknowledge to show you are investigating; resolve with a note to close.</p></div>
+    </div>
+    <form class="filters" id="filters" autocomplete="off">
+        <div class="field" style="flex:1 1 180px"><label for="f-employee">Employee</label>
+            <input class="input" id="f-employee" name="employee" placeholder="ID or name"></div>
+        <div class="field"><label for="f-status">Status</label>
+            <select class="input" id="f-status" name="status">
+                <option value="OPEN">Open (new + acknowledged)</option><option value="">All</option>
+                <option>NEW</option><option>ACKNOWLEDGED</option><option>RESOLVED</option></select></div>
+        <div class="field"><label for="f-sev">Severity</label>
+            <select class="input" id="f-sev" name="severity"><option value="">Any</option>{% for s in severities %}<option>{{ s }}</option>{% endfor %}</select></div>
+        <div class="field"><label for="f-type">Alert type</label>
+            <select class="input" id="f-type" name="alert_type"><option value="">Any</option>
+                {% for key, title in alert_types %}<option value="{{ key }}">{{ title }}</option>{% endfor %}</select></div>
+        <div class="field"><label for="f-from">From</label><input class="input" type="date" id="f-from" name="date_from"></div>
+        <div class="field"><label for="f-to">To</label><input class="input" type="date" id="f-to" name="date_to"></div>
+    </form>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Time</th><th>Employee</th><th>Alert</th><th>Severity</th><th class="num">Risk score</th><th>Status</th><th>Handled by</th><th>Action</th></tr></thead>
+            <tbody id="alert-body"><tr><td colspan="8" class="empty">Loading…</td></tr></tbody>
+        </table>
+    </div>
+    <div class="pager" id="alert-pager"></div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/manager-alerts.js') }}"></script>
+{% endblock %}

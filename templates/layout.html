@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+{% set is_manager = current_user.is_manager %}
+
+{% block body_attrs %}data-role="{{ current_user.role }}" data-employee-id="{{ current_user.employee_id }}" data-heartbeat="{{ config.HEARTBEAT_SECONDS }}"{% endblock %}
+
+{% block body %}
+<div class="app">
+    <aside class="sidebar" id="sidebar">
+        <div class="brand">
+            <div class="brand-logo">{% include "partials/logo_mark.html" %}</div>
+            <div><h2>SHRUTU</h2><span>{{ 'Security Console' if is_manager else 'Employee Portal' }}</span></div>
+        </div>
+
+        {% if is_manager %}
+            <div class="menu-title">MONITORING</div>
+            <a href="{{ url_for('manager.dashboard') }}" class="nav {{ 'active' if active == 'dashboard' }}">{{ icon('dashboard') }} Dashboard</a>
+            <a href="{{ url_for('manager.activity') }}" class="nav {{ 'active' if active == 'activity' }}">{{ icon('activity') }} Live Activity</a>
+            <a href="{{ url_for('manager.alerts') }}" class="nav {{ 'active' if active == 'alerts' }}">{{ icon('alert') }} Alerts <span class="count" id="nav-alert-count" hidden>0</span></a>
+            <a href="{{ url_for('manager.risk') }}" class="nav {{ 'active' if active == 'risk' }}">{{ icon('risk') }} Risk Monitoring</a>
+            <div class="menu-title">MANAGEMENT</div>
+            <a href="{{ url_for('manager.employees') }}" class="nav {{ 'active' if active == 'employees' }}">{{ icon('users') }} Employees</a>
+            <a href="{{ url_for('manager.audit') }}" class="nav {{ 'active' if active == 'audit' }}">{{ icon('audit') }} Audit Logs</a>
+            <a href="{{ url_for('manager.settings') }}" class="nav {{ 'active' if active == 'settings' }}">{{ icon('settings') }} Settings</a>
+        {% else %}
+            <div class="menu-title">WORKSPACE</div>
+            <a href="{{ url_for('employee.dashboard') }}" class="nav {{ 'active' if active == 'dashboard' }}">{{ icon('dashboard') }} Dashboard</a>
+            <a href="{{ url_for('employee.records') }}" class="nav {{ 'active' if active == 'records' }}">{{ icon('records') }} Records</a>
+            <a href="{{ url_for('employee.my_activity') }}" class="nav {{ 'active' if active == 'activity' }}">{{ icon('activity') }} My Activity</a>
+            <a href="{{ url_for('employee.profile') }}" class="nav {{ 'active' if active == 'profile' }}">{{ icon('profile') }} Profile</a>
+        {% endif %}
+
+        <div class="sidebar-bottom">
+            <div class="user-box">
+                <div class="avatar">{{ current_user.initials }}</div>
+                <div>
+                    <strong>{{ current_user.name }}</strong>
+                    <small>{{ current_user.employee_id }} · {{ 'Manager' if is_manager else current_user.department }}</small>
+                </div>
+            </div>
+            <form method="POST" action="{{ url_for('auth.logout') }}" class="logout-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit">{{ icon('logout') }} Logout</button>
+            </form>
+        </div>
+    </aside>
+
+    <main class="main">
+        <header class="topbar">
+            <div style="display:flex;align-items:center;gap:12px;min-width:0">
+                <button class="icon-btn menu-toggle" id="menu-toggle" aria-label="Open menu">{{ icon('menu') }}</button>
+                <div style="min-width:0">
+                    <div class="breadcrumb">{% block breadcrumb %}{{ 'Security' if is_manager else 'Workspace' }}{% endblock %}</div>
+                    <h1>{% block heading %}{% endblock %}</h1>
+                </div>
+            </div>
+            <div class="top-actions">
+                <span class="live-status" id="live-status" title="Real-time connection"><span class="dot"></span><span class="label">Connecting…</span></span>
+                <button class="icon-btn" id="theme-toggle" aria-label="Toggle light/dark theme">{{ icon('moon') }}</button>
+                {% if is_manager %}
+                <div class="notif-wrap">
+                    <button class="icon-btn" id="notif-button" aria-label="Notifications">{{ icon('bell') }}<span class="badge-dot" id="notif-count" hidden>0</span></button>
+                    <div class="notif-panel" id="notif-panel" hidden>
+                        <header><span>New alerts</span><a href="{{ url_for('manager.alerts') }}?status=NEW" class="small">View all</a></header>
+                        <div id="notif-list"><div class="empty">No new alerts</div></div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </header>
+
+        <div class="content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div class="flashes">
+                    {% for category, message in messages %}<div class="flash {{ category }}" role="status">{{ message }}</div>{% endfor %}
+                </div>
+                {% endif %}
+            {% endwith %}
+            {% block content %}{% endblock %}
+        </div>
+
+        <footer class="page-footer">SHRUTU Security Intelligence © 2026 · Insider Threat Monitoring System</footer>
+    </main>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.8.1/dist/socket.io.min.js"></script>
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+<script src="{{ url_for('static', filename='js/realtime.js') }}"></script>
+{% block scripts %}{% endblock %}
+{% endblock %}

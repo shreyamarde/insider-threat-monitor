@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+{% block title %}Audit Logs{% endblock %}
+{% block breadcrumb %}Management / Audit{% endblock %}
+{% block heading %}Audit Logs{% endblock %}
+
+{% block content %}
+<section class="card">
+    <div class="tabs" role="tablist">
+        <button class="tab active" data-tab="manager" role="tab">Manager actions</button>
+        <button class="tab" data-tab="logins" role="tab">Login attempts</button>
+    </div>
+
+    <div data-panel="manager">
+        <div class="card-header" style="padding-bottom:0"><div><p>Every action taken by managers is recorded, so the monitoring system itself stays accountable.</p></div></div>
+        <form class="filters" id="audit-filters" autocomplete="off">
+            <div class="field" style="flex:1 1 180px"><label for="a-emp">Manager</label><input class="input" id="a-emp" name="employee" placeholder="ID or name"></div>
+            <div class="field"><label for="a-action">Action</label>
+                <select class="input" id="a-action" name="action"><option value="">All actions</option>
+                    {% for a in actions %}<option>{{ a }}</option>{% endfor %}<option>LOGOUT</option><option>PASSWORD_CHANGE</option><option>FAILED_LOGIN</option></select></div>
+            <div class="field"><label for="a-from">From</label><input class="input" type="date" id="a-from" name="date_from"></div>
+            <div class="field"><label for="a-to">To</label><input class="input" type="date" id="a-to" name="date_to"></div>
+        </form>
+        <div class="table-wrap"><table>
+            <thead><tr><th>Time</th><th>Manager</th><th>Action</th><th>Target</th><th>Details</th><th>IP address</th></tr></thead>
+            <tbody id="audit-body"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+        </table></div>
+        <div class="pager" id="audit-pager"></div>
+    </div>
+
+    <div data-panel="logins" hidden>
+        <form class="filters" id="login-filters" autocomplete="off">
+            <div class="field" style="flex:1 1 180px"><label for="l-emp">Employee ID</label><input class="input" id="l-emp" name="employee" placeholder="ID or name"></div>
+            <div class="field"><label for="l-success">Result</label>
+                <select class="input" id="l-success" name="success"><option value="">All</option><option value="1">Successful</option><option value="0">Failed</option></select></div>
+            <div class="field"><label for="l-from">From</label><input class="input" type="date" id="l-from" name="date_from"></div>
+            <div class="field"><label for="l-to">To</label><input class="input" type="date" id="l-to" name="date_to"></div>
+        </form>
+        <div class="table-wrap"><table>
+            <thead><tr><th>Time</th><th>Employee ID</th><th>Result</th><th>Reason</th><th>IP address</th><th>User agent</th></tr></thead>
+            <tbody id="login-body"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+        </table></div>
+        <div class="pager" id="login-pager"></div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/manager-audit.js') }}"></script>
+{% endblock %}

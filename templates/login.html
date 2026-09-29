@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHRUTU | Sign in</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/logo.svg') }}" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body>
+<div class="glow glow-one"></div>
+<div class="glow glow-two"></div>
+
+<div class="login-container">
+    <section class="brand-section">
+        <div class="brand">
+            <div class="brand-icon">{% include "partials/logo_mark.html" %}</div>
+            <div>
+                <div class="brand-name">SHRUTU</div>
+                <div class="brand-subtitle">SECURITY INTELLIGENCE</div>
+            </div>
+        </div>
+        <h1 class="welcome-title">Protect your organization<br><span>before threats become incidents.</span></h1>
+        <p class="description">
+            SHRUTU Insider Threat Monitoring gives security managers real-time visibility into
+            employee activity, explainable risk scores and instant alerts on suspicious behaviour.
+        </p>
+        <div class="features">
+            <div class="feature"><div class="feature-icon">✓</div>Real-time threat monitoring</div>
+            <div class="feature"><div class="feature-icon">✓</div>Explainable employee risk scoring</div>
+            <div class="feature"><div class="feature-icon">✓</div>Instant manager alerts</div>
+            <div class="feature"><div class="feature-icon">✓</div>Complete, tamper-evident audit trail</div>
+        </div>
+        <div class="security-orbit"></div>
+    </section>
+
+    <section class="login-section">
+        <div class="login-heading">
+            <h2>Welcome back</h2>
+            <p>Sign in with your employee ID to access the console.</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="flash {{ category }}" role="status">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+        {% if error %}
+            <div class="error-message" role="alert">⚠ {{ error }}</div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('auth.login', next=request.args.get('next')) }}" autocomplete="on" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label for="employee_id">EMPLOYEE ID</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M15 8h2M15 12h2M7 16h10"/></svg>
+                    </span>
+                    <input type="text" id="employee_id" name="employee_id" class="uppercase" placeholder="e.g. EMP1001"
+                           value="{{ employee_id or '' }}" maxlength="20" required autocomplete="username" autofocus>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="password">PASSWORD</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                    </span>
+                    <input type="password" id="password" name="password" placeholder="Enter your password"
+                           required autocomplete="current-password" maxlength="128">
+                    <button type="button" class="password-toggle" id="password-toggle" aria-label="Show password">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="login-options">Forgot your password? Ask your manager to reset it.</div>
+            <button type="submit" class="login-button">Sign in to Security Console →</button>
+        </form>
+
+        <div class="security-message">
+            <span>🔐</span>
+            <span><strong>Monitored system.</strong>&nbsp; All sign-in attempts and activity are recorded.</span>
+        </div>
+        <div class="footer">
+            SHRUTU Security Intelligence Platform<br>
+            <span>Authorized personnel only • v2.0</span>
+        </div>
+    </section>
+</div>
+<script src="{{ url_for('static', filename='js/login.js') }}"></script>
+</body>
+</html>
