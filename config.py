@@ -47,6 +47,8 @@ def mysql_ssl_context():
     """
     ca = os.getenv("MYSQL_SSL_CA")
     if ca:
+        if not os.path.isabs(ca):
+            ca = os.path.join(BASE_DIR, ca)  # relative paths are relative to the project folder
         if not os.path.isfile(ca):
             raise RuntimeError(f"MYSQL_SSL_CA points to {ca!r}, but that file does not exist. "
                                "Upload the database CA certificate (e.g. as a Render Secret File named ca.pem).")

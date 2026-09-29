@@ -193,7 +193,7 @@ Deployment files in this repo: `wsgi.py` (production entry point), `render.yaml`
 1. **Aiven — create the database**
    - Sign up at aiven.io → *Create service* → **MySQL** → **Free plan** → pick the region closest to Singapore → create.
    - When it is *Running*, open its **Overview** page and note **Host, Port, User** (`avnadmin`) and **Password**.
-   - Download the **CA certificate** (`ca.pem`) from the same page.
+   - Copy the **CA certificate** from the same page into `certs/aiven-ca.pem` (it is public, not a secret) and update the host/port in `render.yaml`.
 2. **GitHub — push the code** (a *private* repository is recommended)
    ```bash
    git remote add origin https://github.com/<your-user>/insider-threat-monitor.git
@@ -201,8 +201,7 @@ Deployment files in this repo: `wsgi.py` (production entry point), `render.yaml`
    ```
 3. **Render — create the web service**
    - Sign up at render.com with GitHub → **New → Blueprint** → select the repository. Render reads `render.yaml`.
-   - Fill in the requested values: `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD` (from Aiven) and **your own** `DEMO_MANAGER_PASSWORD` / `DEMO_EMPLOYEE_PASSWORD` for the public demo accounts.
-   - Open the new service → **Environment → Secret Files** → add a file named **`ca.pem`** with the contents of Aiven's CA certificate.
+   - Fill in the three secrets Render asks for: `MYSQL_PASSWORD` (from Aiven) and **your own** `DEMO_MANAGER_PASSWORD` / `DEMO_EMPLOYEE_PASSWORD` for the public demo accounts.
    - Deploy. On the first start the app creates all tables and demo data automatically (`AUTO_INIT_DB=1`) — watch the **Logs** tab for `Database ready`.
 4. Open `https://<service-name>.onrender.com` and sign in as `MGR1001` with your `DEMO_MANAGER_PASSWORD`.
 

@@ -14,20 +14,20 @@ services:
     envVars:
       - key: SECRET_KEY
         generateValue: true
-      # --- Aiven MySQL (copy from the Aiven service "Overview" page)
+      # --- Aiven MySQL service "shrutu-mysql" (host/port/user are not secret)
       - key: MYSQL_HOST
-        sync: false
+        value: shrutu-mysql-shreyamarde06-60be.g.aivencloud.com
       - key: MYSQL_PORT
-        sync: false
+        value: "26754"
       - key: MYSQL_USER
-        sync: false
+        value: avnadmin
       - key: MYSQL_PASSWORD
         sync: false
       - key: MYSQL_DATABASE
         value: insider_threat_system
-      # Aiven's CA certificate, uploaded as a Render "Secret File" named ca.pem
+      # Aiven's public CA certificate (committed in certs/) — verifies the TLS connection
       - key: MYSQL_SSL_CA
-        value: /etc/secrets/ca.pem
+        value: certs/aiven-ca.pem
       # --- create tables + demo data automatically on the first start
       - key: AUTO_INIT_DB
         value: "1"
