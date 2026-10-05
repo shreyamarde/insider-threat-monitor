@@ -1,7 +1,7 @@
 /* Employee detail page: edit account, reset password; reloads when this employee does something. */
 (function () {
     "use strict";
-    const { api, esc, toast, openModal, closeModal, formValues, debounce } = window.ITM;
+    const { api, esc, toast, openModal, closeModal, formValues, debounce, passwordChecklist, generatePassword } = window.ITM;
     const root = document.getElementById("employee-detail");
     const userId = root.dataset.userId;
     const employeeId = root.dataset.employeeId;
@@ -26,10 +26,19 @@
         const modal = openModal(`Reset password — ${esc(employeeId)}`, `
             <p class="muted small" style="margin-bottom:12px">The employee must choose a new password at their next login. Recorded in the audit log.</p>
             <div class="field"><label for="r-password">Temporary password</label>
-            <input class="input" id="r-password" type="text" maxlength="128" autocomplete="new-password" placeholder="At least 8 characters with letters and numbers"></div>`,
+            <div class="input-group"><input class="input" id="r-password" type="text" maxlength="128" autocomplete="new-password" value="${generatePassword()}">
+            <button type="button" class="btn" id="r-gen">Generate</button></div></div>`,
             { footer: `<button class="btn" data-close>Cancel</button><button class="btn primary" id="r-submit">Reset password</button>` });
-        modal.querySelector("#r-password").focus();
+        const pwInput = modal.querySelector("#r-password");
+        const checklist = passwordChecklist(pwInput, () => ({ employeeId, name: root.dataset.name }));
+        modal.querySelector("#r-gen").addEventListener("click", () => { pwInput.value = generatePassword(); checklist.update(); });
+        pwInput.focus();
         modal.querySelector("#r-submit").addEventListener("click", async () => {
+            if (!checklist.isStrong()) {
+                toast("The password does not meet all the strong-password rules.", "error");
+                pwInput.focus();
+                return;
+            }
             try {
                 const res = await api("POST", `/api/manager/employees/${userId}/reset-password`,
                     { password: modal.querySelector("#r-password").value });

@@ -124,7 +124,8 @@ def change_password():
         elif new_pw == current_pw:
             error = "The new password must be different from the current one."
         else:
-            error = validate_password(new_pw, current_app.config["PASSWORD_MIN_LENGTH"])
+            error = validate_password(new_pw, current_app.config["PASSWORD_MIN_LENGTH"],
+                                      employee_id=current_user.employee_id, name=current_user.name)
         if error:
             flash(error, "error")
             return render_template("change_password.html", forced=forced), 400

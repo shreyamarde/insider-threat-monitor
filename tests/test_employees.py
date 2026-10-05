@@ -3,7 +3,7 @@ from tests.conftest import login, user
 
 NEW = {"employee_id": "EMP1006", "name": "Test Employee", "email": "test.employee@test.example",
        "department": "Finance", "job_title": "Analyst", "role": "employee",
-       "password": "TempPass123", "status": "active"}
+       "password": "Temp#Pass123", "status": "active"}
 
 
 def test_create_employee(manager, make_client):
@@ -12,14 +12,14 @@ def test_create_employee(manager, make_client):
     body = resp.get_json()
     assert "password" not in str(body).lower().replace("must_change_password", "")
     u = user("EMP1006")
-    assert u and u.password_hash != "TempPass123" and u.password_hash.startswith("scrypt:")
+    assert u and u.password_hash != "Temp#Pass123" and u.password_hash.startswith("scrypt:")
     assert u.must_change_password and u.created_by == user("MGR1001").id
     assert RiskScore.query.filter_by(user_id=u.id).one().current_score == 0
     audit = ActivityLog.query.filter_by(action="CREATE_EMPLOYEE").one()
     assert audit.employee_id == "MGR1001" and audit.resource == "employee:EMP1006"
     # the new employee can log in immediately
     c = make_client()
-    assert login(c, "EMP1006", "TempPass123").status_code == 302
+    assert login(c, "EMP1006", "Temp#Pass123").status_code == 302
 
 
 def test_duplicate_employee_id_and_email(manager):
@@ -61,12 +61,12 @@ def test_delete_endpoint_soft_disables(manager):
 def test_reset_password(manager, make_client):
     uid = user("EMP1001").id
     assert manager.post(f"/api/manager/employees/{uid}/reset-password", json={"password": "abc"}).status_code == 400
-    resp = manager.post(f"/api/manager/employees/{uid}/reset-password", json={"password": "Reset12345"})
+    resp = manager.post(f"/api/manager/employees/{uid}/reset-password", json={"password": "Reset#12345"})
     assert resp.status_code == 200
     assert ActivityLog.query.filter_by(action="RESET_PASSWORD").count() == 1
     c = make_client()
     assert login(c, "EMP1001").status_code == 401  # old password no longer works
-    assert login(c, "EMP1001", "Reset12345").headers["Location"].endswith("/change-password")
+    assert login(c, "EMP1001", "Reset#12345").headers["Location"].endswith("/change-password")
 
 
 def test_manager_cannot_disable_self(manager):
@@ -91,3 +91,25 @@ def test_employee_list_search_and_filters(manager):
     assert data["total"] == 0
     for item in manager.get("/api/manager/employees").get_json()["items"]:
         assert "password_hash" not in item
+
+
+def test_strong_password_rules():
+    from utils.validators import validate_password
+    assert validate_password("Strong#Pass9") is None
+    weak = {"Sh0rt#a": "8 characters", "nouppercase#1": "uppercase", "NOLOWERCASE#1": "lowercase",
+            "NoNumber#here": "number", "NoSpecial123": "special", "Has Space#1": "spaces",
+            "Aaaa#bbb1": "repeated", "MyPassword#1": "common", "Qwerty#Key1": "common"}
+    for pw, rule in weak.items():
+        error = validate_password(pw)
+        assert error and rule in error, (pw, error)
+    assert "employee ID" in validate_password("Emp1006#Xy", employee_id="EMP1006")
+    assert "name" in validate_password("Rahul#2026x", name="Rahul Sharma")
+
+
+def test_create_and_reset_reject_weak_passwords(manager):
+    weak = dict(NEW, password="Temp1234")  # no special character
+    resp = manager.post("/api/manager/employees", json=weak)
+    assert resp.status_code == 400 and resp.get_json()["field"] == "password"
+    uid = user("EMP1001").id
+    resp = manager.post(f"/api/manager/employees/{uid}/reset-password", json={"password": "Rahul#2026x"})
+    assert resp.status_code == 400 and "name" in resp.get_json()["message"]

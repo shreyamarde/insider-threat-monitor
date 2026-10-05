@@ -63,7 +63,7 @@ Employee action ─► Flask route ─► log_activity() ─► MySQL (activity_
 | Database | MySQL 8 via PyMySQL |
 | Security | Werkzeug `generate_password_hash` / `check_password_hash` (scrypt), CSRF tokens, session protection, CSP headers |
 | Frontend | HTML (Jinja2), custom CSS design system (dark/light), vanilla JavaScript, Chart.js 4, Socket.IO client 4 (both from jsDelivr CDN) |
-| Tests | pytest (51 tests, in-memory SQLite + Flask/Socket.IO test clients) |
+| Tests | pytest (54 tests, in-memory SQLite + Flask/Socket.IO test clients) |
 
 ## Architecture & project structure
 
@@ -347,7 +347,8 @@ These explanations are shown on the activity detail modal, the employee page and
 ## Security measures
 
 - Passwords hashed with Werkzeug scrypt (`generate_password_hash` / `check_password_hash`); never returned by any API or rendered in HTML.
-- Temporary passwords must be changed at first login; password policy: ≥ 8 chars with letters and digits.
+- Temporary passwords must be changed at first login.
+- **Strong password policy** — enforced on the server (`utils/validators.py`) for creating an employee, resetting a password and changing your own password, and shown as a live ✓ checklist in each form: at least 8 characters (max 128), an uppercase letter, a lowercase letter, a number and a special character; no spaces; no character repeated 3+ times in a row; no common words such as `password`, `qwerty` or `123456`; must not contain the account's employee ID or name. The *Generate* button always produces a 12-character password that meets every rule.
 - Role-based access control with `@login_required`, `@manager_required`, `@employee_required` on every route and API. Employees probing manager URLs get **403** *and* an alert.
 - Login rate limiting: 5 failures per employee ID or 20 per IP in 15 min → temporary lockout. Generic error messages (no user enumeration).
 - CSRF protection on every form and on API writes (`X-CSRFToken` header); logout is POST-only.

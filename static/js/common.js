@@ -284,6 +284,65 @@
         return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
     }
 
+    // ------------------------------------------------- strong passwords
+    // Mirrors utils/validators.py password_problems(); the server is still the real check.
+    const WEAK_WORDS = ["password", "passw0rd", "qwerty", "123456", "abcdef", "letmein", "welcome", "shrutu"];
+
+    function passwordRules(pw, minLength, ctx) {
+        const lower = pw.toLowerCase();
+        const rules = [
+            [`At least ${minLength} characters`, pw.length >= minLength],
+            ["An uppercase letter (A-Z)", /[A-Z]/.test(pw)],
+            ["A lowercase letter (a-z)", /[a-z]/.test(pw)],
+            ["A number (0-9)", /\d/.test(pw)],
+            ["A special character (@ # $ ! % …)", /[^A-Za-z0-9\s]/.test(pw)],
+            ["No spaces", pw.length > 0 && !/\s/.test(pw)],
+            ["No character repeated 3+ times in a row", pw.length > 0 && !/(.)\1\1/.test(pw)],
+            ["No common words like 'password' or '123456'", pw.length > 0 && !WEAK_WORDS.some((w) => lower.includes(w))],
+        ];
+        const empId = (ctx.employeeId || "").toLowerCase();
+        if (empId) rules.push(["Does not contain the employee ID", pw.length > 0 && !lower.includes(empId)]);
+        const nameParts = (ctx.name || "").toLowerCase().split(/[\s.'-]+/).filter((p) => p.length >= 3);
+        if (nameParts.length) rules.push(["Does not contain the person's name", pw.length > 0 && !nameParts.some((p) => lower.includes(p))]);
+        return rules;
+    }
+
+    /* Live checklist under a password input. getContext() returns {employeeId, name} for the account
+       the password is for (optional). Returns {update, isStrong}. */
+    function passwordChecklist(input, getContext = () => ({})) {
+        const minLength = Number(input.dataset.minLength) || 8;
+        const list = document.createElement("ul");
+        list.className = "pw-rules";
+        list.setAttribute("aria-live", "polite");
+        (input.closest(".field") || input.parentElement).appendChild(list);
+        let strong = false;
+        const update = () => {
+            const rules = passwordRules(input.value, minLength, getContext() || {});
+            strong = rules.every(([, ok]) => ok);
+            list.innerHTML = rules.map(([label, ok]) =>
+                `<li class="${ok ? "ok" : ""}"><span aria-hidden="true">${ok ? "✓" : "○"}</span> ${esc(label)}</li>`).join("");
+            input.classList.toggle("invalid", input.value.length > 0 && !strong);
+        };
+        input.addEventListener("input", update);
+        update();
+        return { update, isStrong: () => strong };
+    }
+
+    // Random temporary password that always passes every rule above.
+    function generatePassword() {
+        const sets = ["ABCDEFGHJKLMNPQRSTUVWXYZ", "abcdefghijkmnpqrstuvwxyz", "23456789", "@#$%&*!?"];
+        const all = sets.join("");
+        const rand = (n) => { const b = new Uint32Array(1); crypto.getRandomValues(b); return b[0] % n; };
+        const chars = sets.map((s) => s[rand(s.length)]);               // one from each class
+        while (chars.length < 12) chars.push(all[rand(all.length)]);
+        for (let i = chars.length - 1; i > 0; i--) {                      // shuffle
+            const j = rand(i + 1);
+            [chars[i], chars[j]] = [chars[j], chars[i]];
+        }
+        const pw = chars.join("");
+        return /(.)\1\1/.test(pw) ? generatePassword() : pw;
+    }
+
     function cssVar(name) {
         return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     }
@@ -307,7 +366,7 @@
     window.ITM = {
         api, query, esc, fmtTime, fmtDateTime, timeAgo, badge, person, toast, openModal, closeModal,
         showActivity, showAlert, acknowledgeAlert, resolveAlert, alertButtons, renderPager, formValues,
-        debounce, cssVar, detailRows, reasonList, LEVEL_FOR,
+        debounce, cssVar, detailRows, reasonList, LEVEL_FOR, passwordChecklist, generatePassword,
         role: document.body.dataset.role,
     };
 })();

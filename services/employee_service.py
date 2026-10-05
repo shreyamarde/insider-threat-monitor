@@ -137,7 +137,8 @@ def set_status(manager, user, status):
 
 
 def reset_password(manager, user, new_password):
-    error = validate_password(new_password or "", current_app.config["PASSWORD_MIN_LENGTH"])
+    error = validate_password(new_password or "", current_app.config["PASSWORD_MIN_LENGTH"],
+                              employee_id=user.employee_id, name=user.name)
     if error:
         raise EmployeeError(error, 400, "password")
     user.set_password(new_password)

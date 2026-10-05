@@ -9,7 +9,7 @@
 {% set level = rs.risk_level if rs else 'LOW' %}
 {% set score = rs.current_score if rs else 0 %}
 
-<section class="card hero" id="employee-detail" data-user-id="{{ user.id }}" data-employee-id="{{ user.employee_id }}">
+<section class="card hero" id="employee-detail" data-user-id="{{ user.id }}" data-employee-id="{{ user.employee_id }}" data-name="{{ user.name }}">
     <div class="avatar lg">{{ user.initials }}</div>
     <div style="flex:1;min-width:0">
         <h2>{{ user.name }} <span class="muted" style="font-weight:500">· {{ user.employee_id }}</span></h2>

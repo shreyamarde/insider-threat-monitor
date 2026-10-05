@@ -75,18 +75,18 @@ def test_expired_session_api_returns_401(client):
 def test_forced_password_change_for_new_accounts(manager, make_client):
     manager.post("/api/manager/employees", json={
         "employee_id": "EMP1006", "name": "Test Employee", "email": "test.employee@test.example",
-        "department": "Finance", "role": "employee", "password": "TempPass123", "status": "active"})
+        "department": "Finance", "role": "employee", "password": "Temp#Pass123", "status": "active"})
     c = make_client()
-    resp = login(c, "EMP1006", "TempPass123")
+    resp = login(c, "EMP1006", "Temp#Pass123")
     assert resp.headers["Location"].endswith("/change-password")
     assert c.get("/employee/dashboard").status_code == 302
     assert c.get("/api/employee/activity").status_code == 403
-    resp = c.post("/change-password", data={"current_password": "TempPass123",
-                                            "new_password": "MyNewPass456", "confirm_password": "MyNewPass456"})
+    resp = c.post("/change-password", data={"current_password": "Temp#Pass123",
+                                            "new_password": "My#NewPass456", "confirm_password": "My#NewPass456"})
     assert resp.status_code == 302
     assert c.get("/employee/dashboard").status_code == 200
     assert last_activity("EMP1006").action == "PASSWORD_CHANGE"
-    assert user("EMP1006").check_password("MyNewPass456")
+    assert user("EMP1006").check_password("My#NewPass456")
 
 
 def test_security_headers_present(client):

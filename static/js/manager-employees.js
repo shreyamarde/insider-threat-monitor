@@ -1,17 +1,10 @@
 /* Employee management: search/filter, create, enable/disable, reset password. */
 (function () {
     "use strict";
-    const { api, query, esc, badge, person, fmtDateTime, toast, openModal, closeModal, renderPager, formValues, debounce } = window.ITM;
+    const { api, query, esc, badge, person, fmtDateTime, toast, openModal, closeModal, renderPager, formValues, debounce,
+        passwordChecklist, generatePassword } = window.ITM;
     const $ = (id) => document.getElementById(id);
     let page = 1;
-
-    function generatePassword() {
-        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
-        const bytes = new Uint32Array(10);
-        crypto.getRandomValues(bytes);
-        const body = Array.from(bytes, (b) => chars[b % chars.length]).join("");
-        return body.slice(0, 5) + (bytes[0] % 10) + "@" + body.slice(5); // guarantees a digit
-    }
 
     function row(u) {
         const toggle = u.status === "active"
@@ -26,7 +19,7 @@
             <td class="nowrap">${u.role === "employee" ? badge.score(u.risk_score, u.risk_level) + " " + badge.level(u.risk_level) : '<span class="muted">—</span>'}</td>
             <td class="nowrap">${esc(fmtDateTime(u.last_login))}<span class="sub">${esc(u.last_login_ip || "")}</span></td>
             <td class="nowrap"><div class="btn-row" style="flex-wrap:nowrap"><a class="btn sm" href="/manager/employees/${u.id}">View</a>
-                <button class="btn sm" data-reset="${u.id}" data-emp="${esc(u.employee_id)}">Reset</button>
+                <button class="btn sm" data-reset="${u.id}" data-emp="${esc(u.employee_id)}" data-name="${esc(u.name)}">Reset</button>
                 ${u.employee_id === document.body.dataset.employeeId ? "" : toggle}</div></td>
         </tr>`;
     }
@@ -49,8 +42,14 @@
             footer: `<button class="btn" data-close>Cancel</button><button class="btn primary" id="create-submit">Create employee</button>`,
         });
         try { modal.querySelector("#e-id").value = (await api("GET", "/api/manager/employees/next-id")).employee_id; } catch (e) { /* keep server default */ }
-        modal.querySelector("#e-password").value = generatePassword();
-        modal.querySelector("#gen-password").addEventListener("click", () => { modal.querySelector("#e-password").value = generatePassword(); });
+        const pwInput = modal.querySelector("#e-password");
+        pwInput.value = generatePassword();
+        const checklist = passwordChecklist(pwInput, () => ({
+            employeeId: modal.querySelector("#e-id").value.trim(), name: modal.querySelector("#e-name").value.trim(),
+        }));
+        modal.querySelector("#e-id").addEventListener("input", checklist.update);
+        modal.querySelector("#e-name").addEventListener("input", checklist.update);
+        modal.querySelector("#gen-password").addEventListener("click", () => { pwInput.value = generatePassword(); checklist.update(); });
         modal.querySelector("#e-name").focus();
         const form = modal.querySelector("#employee-form");
         const submit = modal.querySelector("#create-submit");
@@ -58,6 +57,13 @@
         const doSubmit = async () => {
             form.querySelectorAll(".invalid").forEach((el) => el.classList.remove("invalid"));
             errEl.hidden = true;
+            if (!checklist.isStrong()) {
+                errEl.textContent = "The temporary password does not meet all the strong-password rules.";
+                errEl.hidden = false;
+                pwInput.classList.add("invalid");
+                pwInput.focus();
+                return;
+            }
             const body = formValues(form);
             body.employee_id = (body.employee_id || "").toUpperCase();
             submit.disabled = true;
@@ -78,7 +84,7 @@
     }
 
     // -------------------------------------------------- reset password
-    function openReset(id, empId) {
+    function openReset(id, empId, name) {
         const modal = openModal(`Reset password — ${esc(empId)}`, `
             <p class="muted small" style="margin-bottom:12px">Set a temporary password. The employee must choose a new one at their next login. This action is recorded in the audit log.</p>
             <div class="field"><label for="r-password">Temporary password</label>
@@ -86,8 +92,17 @@
             <button type="button" class="btn" id="r-gen">Generate</button></div></div>
             <p class="error-text" id="r-error" hidden></p>`,
             { footer: `<button class="btn" data-close>Cancel</button><button class="btn primary" id="r-submit">Reset password</button>` });
-        modal.querySelector("#r-gen").addEventListener("click", () => { modal.querySelector("#r-password").value = generatePassword(); });
+        const pwInput = modal.querySelector("#r-password");
+        const checklist = passwordChecklist(pwInput, () => ({ employeeId: empId, name }));
+        modal.querySelector("#r-gen").addEventListener("click", () => { pwInput.value = generatePassword(); checklist.update(); });
         modal.querySelector("#r-submit").addEventListener("click", async () => {
+            if (!checklist.isStrong()) {
+                const err = modal.querySelector("#r-error");
+                err.textContent = "The password does not meet all the strong-password rules.";
+                err.hidden = false;
+                pwInput.focus();
+                return;
+            }
             try {
                 const res = await api("POST", `/api/manager/employees/${id}/reset-password`, { password: modal.querySelector("#r-password").value });
                 closeModal();
@@ -118,7 +133,7 @@
     $("emp-body").addEventListener("click", (e) => {
         const reset = e.target.closest("[data-reset]");
         const status = e.target.closest("[data-status]");
-        if (reset) openReset(reset.dataset.reset, reset.dataset.emp);
+        if (reset) openReset(reset.dataset.reset, reset.dataset.emp, reset.dataset.name);
         if (status) setStatus(status.dataset.id, status.dataset.status, status);
     });
     document.addEventListener("itm:presence", debounce(load, 800));

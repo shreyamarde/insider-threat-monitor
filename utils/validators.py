@@ -21,21 +21,48 @@ def normalize_employee_id(value):
     return clean(value, 20).upper()
 
 
-def password_problems(password, min_length=8):
+PASSWORD_MAX_LENGTH = 128
+# Easily guessed words that may not appear anywhere in a password (case-insensitive).
+WEAK_PASSWORD_WORDS = ("password", "passw0rd", "qwerty", "123456", "abcdef", "letmein", "welcome", "shrutu")
+
+
+def password_problems(password, min_length=8, employee_id=None, name=None):
+    """Return the unmet strong-password rules as short phrases (empty list = strong enough).
+
+    The same rules are mirrored for the live checklist in static/js/common.js (passwordChecklist).
+    """
+    password = password or ""
+    lowered = password.lower()
     problems = []
-    if len(password or "") < min_length:
+    if len(password) < min_length:
         problems.append(f"at least {min_length} characters")
-    if not re.search(r"[A-Za-z]", password or ""):
-        problems.append("a letter")
-    if not re.search(r"\d", password or ""):
+    if len(password) > PASSWORD_MAX_LENGTH:
+        problems.append(f"at most {PASSWORD_MAX_LENGTH} characters")
+    if not re.search(r"[A-Z]", password):
+        problems.append("an uppercase letter")
+    if not re.search(r"[a-z]", password):
+        problems.append("a lowercase letter")
+    if not re.search(r"\d", password):
         problems.append("a number")
+    if not re.search(r"[^A-Za-z0-9\s]", password):
+        problems.append("a special character (e.g. @ # $ ! %)")
+    if re.search(r"\s", password):
+        problems.append("no spaces")
+    if re.search(r"(.)\1\1", password):
+        problems.append("no character repeated 3+ times in a row")
+    if any(word in lowered for word in WEAK_PASSWORD_WORDS):
+        problems.append("no common words like 'password' or '123456'")
+    if employee_id and employee_id.lower() in lowered:
+        problems.append("not contain the employee ID")
+    if name and any(len(part) >= 3 and part in lowered for part in re.split(r"[\s.'-]+", name.lower())):
+        problems.append("not contain the person's name")
     return problems
 
 
-def validate_password(password, min_length=8):
-    problems = password_problems(password, min_length)
+def validate_password(password, min_length=8, employee_id=None, name=None):
+    problems = password_problems(password, min_length, employee_id, name)
     if problems:
-        return "Password must contain " + ", ".join(problems) + "."
+        return "Weak password. It must have: " + "; ".join(problems) + "."
     return None
 
 
@@ -79,7 +106,8 @@ def validate_employee_payload(data, departments, partial=False, min_password=8):
             errors["status"] = "Status must be active or disabled."
         out["status"] = status
     if not partial:
-        pw_error = validate_password(data.get("password") or "", min_password)
+        pw_error = validate_password(data.get("password") or "", min_password,
+                                     employee_id=out.get("employee_id"), name=out.get("name"))
         if pw_error:
             errors["password"] = pw_error
         out["password"] = data.get("password") or ""
