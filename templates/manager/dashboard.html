@@ -51,6 +51,33 @@
     </div>
 </section>
 
+<section class="card" id="highlights">
+    <div class="card-header">
+        <div><h3>Last 30 Days — Highlights</h3><p id="hl-range">Compared with the previous 30 days</p></div>
+        <a class="btn sm" href="{{ url_for('manager.activity') }}">Activity log →</a>
+    </div>
+    <div class="card-body">
+        <div class="hl-stats" id="hl-stats"><div class="empty">Loading…</div></div>
+        <p class="hl-note" id="hl-note"></p>
+        <div class="grid grid-main hl-grid">
+            <div>
+                <div class="section-title">Daily activity</div>
+                <div class="legend"><span><i style="background:var(--series-1)"></i>All activity</span><span><i style="background:var(--series-2)"></i>Risk-scored activity</span></div>
+                <div class="chart-box"><canvas id="chart-30d" role="img" aria-label="Line chart of activity per day over the last 30 days"></canvas></div>
+                <details class="data-table" id="table-30d"><summary>View data table</summary></details>
+            </div>
+            <div>
+                <div class="section-title">Most flagged employees</div>
+                <div id="hl-employees"></div>
+                <div class="section-title">Top alert types</div>
+                <ul class="hl-bars" id="hl-alert-types"></ul>
+                <div class="section-title">Departments by risk points</div>
+                <ul class="hl-bars" id="hl-departments"></ul>
+            </div>
+        </div>
+    </div>
+</section>
+
 <section class="grid grid-2">
     <div class="card">
         <div class="card-header">

@@ -105,6 +105,67 @@
         C.table($("table-employees"), ["Employee", "Actions"], ch.top_employees.labels.map((l, i) => [l, ch.top_employees.values[i]]));
     }
 
+    // ----------------------------------------------- last 30 days
+    const HL_TILES = [
+        // key, label, lowerIsBetter (null = neutral)
+        ["activities", "Activities logged", null],
+        ["risk_scored", "Risk-scored actions", true],
+        ["alerts", "Alerts raised", true],
+        ["high_critical", "High / critical alerts", true],
+        ["blocked", "Blocked access attempts", true],
+        ["failed_logins", "Failed logins", true],
+    ];
+
+    function delta(cur, prev, lowerIsBetter) {
+        if (cur === prev) return `<span class="hl-delta flat">no change</span>`;
+        const up = cur > prev;
+        const tone = lowerIsBetter === null ? "flat" : (up === lowerIsBetter ? "bad" : "good");
+        const text = prev === 0 ? "▲ up from 0" : `${up ? "▲" : "▼"} ${Math.round(Math.abs(cur - prev) / prev * 100)}% vs ${prev}`;
+        return `<span class="hl-delta ${tone}" title="Previous 30 days: ${prev}">${text}</span>`;
+    }
+
+    function fmtMinutes(m) {
+        if (m === null || m === undefined) return "—";
+        if (m < 60) return `${m} min`;
+        const h = Math.floor(m / 60);
+        return h < 48 ? `${h} h ${m % 60} min` : `${Math.round(h / 24)} days`;
+    }
+
+    function hlBars(el, rows, label, value) {
+        const max = Math.max(1, ...rows.map(value));
+        el.innerHTML = rows.length ? rows.map((r) => `<li><span class="hl-bar-label">${label(r)}</span>
+            <span class="hl-bar"><i style="width:${Math.round(value(r) / max * 100)}%"></i></span>
+            <span class="hl-bar-value">${esc(value(r))}</span></li>`).join("")
+            : `<li class="empty">Nothing in the last 30 days</li>`;
+    }
+
+    function renderHighlights(h) {
+        const range = `${new Date(h.from).toLocaleDateString(undefined, { day: "numeric", month: "short" })} – today`;
+        $("hl-range").textContent = `${range}, compared with the previous ${h.days} days`;
+        $("hl-stats").innerHTML = HL_TILES.map(([key, label, lower]) => `
+            <div class="hl-stat"><div class="hl-label">${esc(label)}</div>
+                <div class="hl-value">${esc(h.current[key])}</div>${delta(h.current[key], h.previous[key], lower)}</div>`).join("");
+        const busiest = h.busiest_day
+            ? `Busiest day: <strong>${esc(new Date(h.busiest_day.date).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" }))}</strong> (${esc(h.busiest_day.activities)} actions)` : "No activity yet";
+        $("hl-note").innerHTML = `${busiest} · Alerts resolved: <strong>${esc(h.alerts_resolved)}</strong> ·
+            Average time to acknowledge: <strong>${esc(fmtMinutes(h.avg_ack_minutes))}</strong>`;
+
+        C.line("chart-30d", h.daily.labels, [
+            { label: "All activity", data: h.daily.activities, color: cssVar("--series-1") },
+            { label: "Risk-scored activity", data: h.daily.risk_scored, color: cssVar("--series-2") },
+        ]);
+        C.table($("table-30d"), ["Day", "All activity", "Risk-scored", "Alerts"],
+            h.daily.labels.map((l, i) => [l, h.daily.activities[i], h.daily.risk_scored[i], h.daily.alerts[i]]));
+
+        $("hl-employees").innerHTML = h.top_employees.length ? h.top_employees.map((e) => `
+            <a class="risk-person" href="/manager/employees/${e.id}">
+                <div class="top"><span>${esc(e.employee_id)} · ${esc(e.name)}</span><span class="badge plain">+${esc(e.points)} pts</span></div>
+                <p>${esc(e.department)} · ${esc(e.events)} risk event${e.events === 1 ? "" : "s"}</p></a>`).join("")
+            : `<div class="empty">No employee gained risk points in the last 30 days.</div>`;
+        hlBars($("hl-alert-types"), h.top_alert_types, (a) => esc(a.title), (a) => a.count);
+        hlBars($("hl-departments"), h.top_departments, (d) => esc(d.department), (d) => d.points);
+    }
+
     // ------------------------------------------------------------ data
     async function load(flash = false) {
         try {
@@ -116,6 +177,7 @@
             renderPresence(last.presence);
             renderLogins(last.recent_logins, last.failed_logins);
             renderCharts(last.charts);
+            renderHighlights(last.highlights);
         } catch (e) {
             window.ITM.toast(`Could not load dashboard: ${e.message}`, "error");
         }
@@ -138,7 +200,7 @@
         refresh();
     });
     ["itm:alert-changed", "itm:presence", "itm:reconnect"].forEach((ev) => document.addEventListener(ev, refresh));
-    document.addEventListener("itm:theme", () => last && renderCharts(last.charts));
+    document.addEventListener("itm:theme", () => { if (last) { renderCharts(last.charts); renderHighlights(last.highlights); } });
     setInterval(() => load(false), 30000); // presence timeouts & relative times
 
     load();

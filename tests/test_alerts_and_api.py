@@ -76,6 +76,29 @@ def test_dashboard_numbers_come_from_database(manager, employee):
     assert sum(data["charts"]["timeline"]["activities"]) == ActivityLog.query.count()
 
 
+def test_dashboard_30_day_highlights(manager, employee):
+    from datetime import timedelta
+    from utils.helpers import now
+    # one blocked action 40 days ago belongs to the *previous* 30-day period
+    db.session.add(ActivityLog(user_id=user("EMP1001").id, employee_id="EMP1001", actor_role="employee",
+                               action="UNAUTHORIZED_ACCESS", status="DENIED", timestamp=now() - timedelta(days=40)))
+    db.session.commit()
+    alert = trigger_alert(employee)
+    manager.put(f"/api/manager/alerts/{alert.id}/acknowledge")
+
+    h = manager.get("/api/manager/dashboard").get_json()["highlights"]
+    recent = ActivityLog.query.count() - 1  # everything except the 40-day-old row
+    assert h["days"] == 30 and len(h["daily"]["labels"]) == 30
+    assert h["current"]["activities"] == recent == sum(h["daily"]["activities"])
+    assert h["current"]["alerts"] == Alert.query.count() == sum(h["daily"]["alerts"])
+    assert h["current"]["blocked"] == 1 and h["previous"]["blocked"] == 1
+    assert h["previous"]["activities"] == 1 and h["previous"]["alerts"] == 0
+    assert h["top_employees"][0]["employee_id"] == "EMP1001" and h["top_employees"][0]["points"] > 0
+    assert h["top_departments"][0]["department"] == "Finance"
+    assert h["top_alert_types"][0]["count"] >= 1
+    assert h["avg_ack_minutes"] == 0 and h["busiest_day"]["activities"] == max(h["daily"]["activities"])
+
+
 def test_audit_and_login_attempt_endpoints(manager, client):
     client.post("/login", data={"employee_id": "EMP1002", "password": "nope-nope1"})
     audit = manager.get("/api/manager/audit").get_json()

@@ -6,7 +6,7 @@ from flask import current_app
 
 from extensions import db
 from models import ActivityLog, Alert, LoginAttempt, RiskEvent, RiskScore, User
-from models.alert import SEVERITIES
+from models.alert import ALERT_TITLES, SEVERITIES
 from utils.helpers import iso, now
 
 LEVELS = ("LOW", "MEDIUM", "HIGH", "CRITICAL")
@@ -92,6 +92,81 @@ def charts():
     }
 
 
+def _period_totals(start, end=None):
+    """Counts for [start, end); end=None means "up to now"."""
+    acts = ActivityLog.query.filter(ActivityLog.timestamp >= start)
+    alerts = Alert.query.filter(Alert.timestamp >= start)
+    logins = LoginAttempt.query.filter(LoginAttempt.timestamp >= start, LoginAttempt.success.is_(False))
+    if end is not None:
+        acts = acts.filter(ActivityLog.timestamp < end)
+        alerts = alerts.filter(Alert.timestamp < end)
+        logins = logins.filter(LoginAttempt.timestamp < end)
+    return {
+        "activities": acts.count(),
+        "risk_scored": acts.filter(ActivityLog.risk_score > 0).count(),
+        "blocked": acts.filter(ActivityLog.status == "DENIED").count(),
+        "alerts": alerts.count(),
+        "high_critical": alerts.filter(Alert.severity.in_(["HIGH", "CRITICAL"])).count(),
+        "failed_logins": logins.count(),
+    }
+
+
+def highlights(days=30):
+    """Last `days` days compared with the `days` before them, plus daily trend and top lists."""
+    start = _start_of_day() - timedelta(days=days - 1)
+    prev_start = start - timedelta(days=days)
+    current, previous = _period_totals(start), _period_totals(prev_start, start)
+
+    # ---- daily trend
+    day_list = [start + timedelta(days=i) for i in range(days)]
+    daily = {"activities": [0] * days, "risk_scored": [0] * days, "alerts": [0] * days}
+    for ts, risk in db.session.query(ActivityLog.timestamp, ActivityLog.risk_score).filter(ActivityLog.timestamp >= start):
+        idx = (ts.date() - start.date()).days
+        if 0 <= idx < days:
+            daily["activities"][idx] += 1
+            if risk > 0:
+                daily["risk_scored"][idx] += 1
+    for (ts,) in db.session.query(Alert.timestamp).filter(Alert.timestamp >= start):
+        idx = (ts.date() - start.date()).days
+        if 0 <= idx < days:
+            daily["alerts"][idx] += 1
+    busiest = max(range(days), key=lambda i: daily["activities"][i]) if any(daily["activities"]) else None
+
+    # ---- alert handling in the period
+    acked = db.session.query(Alert.timestamp, Alert.acknowledged_at).filter(
+        Alert.acknowledged_at.isnot(None), Alert.acknowledged_at >= start).all()
+    waits = [(ack - raised).total_seconds() for raised, ack in acked if ack >= raised]
+    resolved = Alert.query.filter(Alert.resolved_at.isnot(None), Alert.resolved_at >= start).count()
+
+    # ---- top lists
+    points = db.func.sum(RiskEvent.points)
+    flagged = (db.session.query(User.id, User.employee_id, User.name, User.department, points, db.func.count(RiskEvent.id))
+               .join(RiskEvent, RiskEvent.user_id == User.id).filter(RiskEvent.created_at >= start)
+               .group_by(User.id, User.employee_id, User.name, User.department)
+               .order_by(points.desc()).limit(5).all())
+    departments = (db.session.query(User.department, points).join(RiskEvent, RiskEvent.user_id == User.id)
+                   .filter(RiskEvent.created_at >= start).group_by(User.department)
+                   .order_by(points.desc()).limit(5).all())
+    count = db.func.count(Alert.id)
+    alert_types = (db.session.query(Alert.alert_type, count).filter(Alert.timestamp >= start)
+                   .group_by(Alert.alert_type).order_by(count.desc()).limit(5).all())
+
+    return {
+        "days": days,
+        "from": iso(start), "to": iso(now()),
+        "current": current, "previous": previous,
+        "alerts_resolved": resolved,
+        "avg_ack_minutes": round(sum(waits) / len(waits) / 60) if waits else None,
+        "busiest_day": {"date": iso(day_list[busiest]), "activities": daily["activities"][busiest]} if busiest is not None else None,
+        "daily": {"labels": [d.strftime("%d %b") for d in day_list], **daily},
+        "top_alert_types": [{"alert_type": t, "title": ALERT_TITLES.get(t, t.replace("_", " ").title()), "count": c}
+                            for t, c in alert_types],
+        "top_employees": [{"id": i, "employee_id": e, "name": n, "department": d, "points": int(p), "events": c}
+                          for i, e, n, d, p, c in flagged],
+        "top_departments": [{"department": d, "points": int(p)} for d, p in departments],
+    }
+
+
 def risk_groups():
     groups = {level: [] for level in LEVELS}
     employees = (User.query.filter(User.role == "employee")
@@ -136,6 +211,7 @@ def dashboard_payload():
     return {
         "stats": stats(),
         "charts": charts(),
+        "highlights": highlights(),
         "feed": [a.to_feed_dict() for a in feed],
         "alerts": [a.to_dict() for a in alerts],
         "risk": risk_groups(),
